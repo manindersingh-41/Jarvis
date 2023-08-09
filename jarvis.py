@@ -125,8 +125,154 @@ def commands_list():
     
     
 def tasks(command):
-    print('command : ', command)
 
+    def weather():
+        global temp
+        global humidity
+        global wind_speed
+        res = requests.get('https://ipinfo.io/')
+        data = res.json()
+
+        location = data['loc'].split(',')
+        latitude = location[0]
+        longitude = location[1]
+        
+
+        print('weather')
+
+        url = "http://api.openweathermap.org/data/2.5/weather?lat=29.503938&lon=76.868997&appid=0c42f7f6b53b244c78a418f4f181282a&units=metric".format(latitude, longitude)
+
+        res = requests.get(url)
+
+
+        data = res.json()
+
+
+        temp = data['main']['temp']
+        humidity=data['main']['humidity']
+        wind_speed = data['wind']['speed']
+        ''' Weather end   Weather end   Weather end    Weather end    Weather end      Weather end   Weather end'''
+
+  
+    def youtube(command):
+        if 'play' in command:
+            command=command.replace("play","")
+        if 'song' in command:
+            command=command.replace("song","")
+        while 'open youtube' in command:
+            speak("opening youtube")
+            webbrowser.open("https://www.youtube.com/")
+            current_window=GetWindowText(GetForegroundWindow()).lower()
+            break
+        else:
+            command=command.replace("on youtube","")
+            kit.playonyt(command)
+
+
+    def how_to(command):
+        max_results = 1
+        result=search_wikihow(command, max_results)
+        assert len(result) == 1
+        result[0].print()
+            
+
+        speak(result[0].summary)
+
+
+    def switch_window( command):
+        found=0
+        '''to get name from user correctly'''
+        while found!=1:
+            
+
+            if 'switch' in command:
+                command=command.replace("switch","")
+            if 'to' in command:
+                command=command.replace("to","")
+            if 'change' in command:
+                command=command.replace('change',"")
+            if " " in command:
+                command=command.replace(" ","")
+            if 'bray' in command or 'bravebrowser' in command:
+                command = 'brave'
+            
+            
+            # all_win=pgw.getAllTitles()
+            # command_command=command.split()
+            # for q in command_command:
+            #     for w in all_win:
+            #         win=w.split()
+            #         for fin in win:
+            #             if q==fin.lower():
+            #                 command=fin
+                
+
+
+            print(command)
+            switcher=str(pgw.getWindowsWithTitle(command)).split('(')         # here ['[Win32Window', 'hWnd=66596), Win32Window', 'hWnd=1247060)]']
+            print('here',len(switcher))
+            print(type(switcher))
+            print(switcher)
+            print('end')
+            ''' switcher = [Win32Window(hWnd=66752)] ''' #example
+            
+            
+            if switcher=="'[]'":
+                speak('speak again')
+
+                '''pipe down msg here'''
+                listen_q.put('switching')
+                command = custom_comm_q.get()
+                # command=take_command('listen switch')
+                # command=command
+                continue
+            elif len(switcher)>2:
+                switcher = switcher[1].split(',')
+                # print('eliffff      ',switcher )
+                switcher = switcher[0].replace('=','')
+                hwdn_id = 'a'
+                found = 1
+                
+            elif len(switcher) == 2:
+                # print('1 index  :  ',switcher[1])
+                switcher=switcher[1].replace('='," ")
+                hwdn_id='a'
+                found =1
+                # speak("speak window name again")
+                # command=take_command('listen switch').lower()
+                # command=command
+                # continue
+
+            for i in switcher:
+                if i.isdigit():
+                    hwdn_id=hwdn_id+i
+                    
+            hwdn_id = hwdn_id.replace('a',"")
+            hwdn_id = int(hwdn_id)
+            # print("'",hwdn_id,"'")
+            # print('win32gui.SetForegroundWindow(',hwdn_id,')')
+            win32gui.SetForegroundWindow(hwdn_id) #66596
+
+    def tell_time(command):
+        strtime=datetime.datetime.now().strftime("%H:%M")
+        print(strtime)
+        speak(strtime)
+
+    # check for command
+    if (any(comm in command for comm in["what's time",'the time'])):
+        tell_time(command)
+
+    elif (any(comm in command for comm in["what is your name","what's your name"])):
+        speak('my name is Jarvis.  Maninder Singh created me')
+    
+    elif (any(comm in command for comm in["switch to",'change to'])):
+        switch_window(command) 
+
+    elif 'play' in command and "on youtube" in command or 'play' in command and "in youtube" in command or 'open youtube' in command or 'on youtube' in command:
+        youtube(command)   
+
+    elif "how to" in command:
+        how_to(command)
 
 
 
