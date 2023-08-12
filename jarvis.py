@@ -258,9 +258,206 @@ def tasks(command):
         print(strtime)
         speak(strtime)
 
+   
+
+    def wikipedia( command):
+        speak("Searching wikipedia")
+        command=command.replace("wikipedia","")
+        results = wpedia.summary(command,sentences=2)
+        speak("according to wikipedia")
+        print(results )
+        speak(results)
+
+    def notepad(command):
+        if 'open'in command:
+            speak('opening notepad')
+            os.system('notepad')
+        else:
+            pass
+
+    def copy_clipboard():
+        pg.hotkey('ctrl','c')
+        time.sleep(0.1)
+        return pyperclip.paste()
+
+    def copy_and_note(command):
+        
+        if (any(comm in command for comm in ['copy it','make a note of selected','copy and make note','copy this','make note of it','store this','store it','store the selected','copy the selected']) and not (any(comm in command for comm in ['give me all text copied','all text copied','make file of text copied','make file of text copy','create file of copy text']))):
+            text = copy_clipboard()
+            copied_text.append(text)
+            speak(random.choice(['okay','done']))
+        
+        elif(any(comm in command for comm in ['give me copied text','make file of the copy text','give me all text copied','all text copied','make file of text copied','make file of text copy','create file of copy text','create file of copied text','Paste data in file'])):
+
+            if copied_text == []:
+                speak('nothing is copied')
+            else:    
+                speak('what should be name of file :')
+                listen_q.put('copy text')
+                command = custom_comm_q.get()
+                global spcl_msg
+                spcl_msg = None
+                speak('creating file '+command)
+                path_copied_text = 'C:\\Users\\manin\\OneDrive\\Desktop\\Jarvis\\'
+                with open(path_copied_text+command+'.txt','w') as f:
+                    for i in copied_text:
+                        f.write(i+'\n')
+
+                    copied_text.clear()
+                    f.close()
+                os.startfile(path_copied_text+command+'.txt')
+
+
+    def groove( command):
+        if 'open' in command:
+            speak("opening")
+            os.system("start mswindowsmusic:")
+            current_window=GetWindowText(GetForegroundWindow()).lower()
+        elif 'play music' in command or 'play songs' in command:
+            speak("playing music")
+            music_dir='E:\\Maninder Singh\\mere gaane'
+            songs=os.listdir(music_dir)
+            
+            os.startfile(os.path.join(music_dir,songs[110]))
+
+
+    def battery(command):
+        pecentage = str(psutil.sensors_battery().percent)+" % remaining"
+        speak(pecentage)
+        if psutil.sensors_battery().power_plugged:
+            speak("Also laptop is being charged")
+        else:
+            pass
+
+    def brightness( command):
+        chek_digit=[int(i) for i in command.split() if i.isdigit()]
+        for i in chek_digit:
+            value=i
+        if chek_digit==[]:
+            value=10
+
+        caution=sbc.get_brightness()
+
+        if 'increase' in command:
+            if caution==100:
+                speak("brightness is maximum")
+            else:
+                current_brightness=sbc.set_brightness("+"+str(value))
+                speak("Brightness changed to "+str(current_brightness))
+            
+        elif 'decrease' in command:
+            if caution==0:
+                speak("brightness is already minimum")
+            else:
+                current_brightness=sbc.set_brightness("-"+str(value))
+                speak("Brightness changed to "+str(current_brightness)) 
+
+        elif 'set' in command or 'change' in command:
+            if chek_digit==[]:
+                value=50
+
+            elif chek_digit>100:
+                speak("can,t set brightness more than 100")
+                speak("setting brightness to 100") 
+                sbc.set_brightness("100")
+            elif chek_digit<0:
+                speak("can,t set brightness less than 0")
+                speak("setting brightness to 0") 
+                sbc.set_brightness("0")
+            else:
+                current_brightness=sbc.set_brightness(command)
+                speak("Brightness changed to "+str(current_brightness))
+
+
+    def open_websites(command):
+        if '.com' in command or '.con' in command or '.in' in command or '.org' in command:
+            if '.con' in command:
+                command=command.replace('.con','.com')
+            if 'open ' in command:
+                command=command.replace('open ','')
+            webbrowser.open('https://'+command)
+        
+
+    
+    def play_pause_music(command):
+        keyboard.press_and_release('play/pause media')
+
+    def system_fn( query):
+        if 'shutdown' in query:
+            speak("starting to shutdown in 5 seconds")
+            time.sleep(5)
+            os.system("shutdown /s /t 5")
+        
+        elif 'restart pc' in query or "restart system" in query:
+            speak("restarting")
+            time.sleep(2)
+            os.system('shutdown /r /t 5')
+
+        elif 'go to sleep' in query or 'sleep mode' in query:
+            os.system("rund1132.exe powrprof,dll,SetSuspendState 0,1,0")
+
+
+    def quit():
+        pass
+
+
+
+    # while True:
+
     # check for command
     if (any(comm in command for comm in["what's time",'the time'])):
         tell_time(command)
+
+    elif (any(comm in command for comm in["search",'on google']) and not (any(comm in command for comm in['wikipedia']))):
+        command = command.replace('search','')
+        if ' on google' in command:
+            command = command.replace(' on google','')
+        speak('searching')
+        kit.search(command)
+        
+
+    elif (any(comm in command for comm in ['copy it','copy the text','make a note of selected','copy and make note','copy this','make note of it','store this','store it','store the selected','copy the selected','give me all text copied','all text copied','make file of text copied','make file of text copy','create file of copy text'])):
+        copy_and_note(command)
+
+
+    
+    elif 'quit' in command or 'sleep now' in command:
+        speak('going to sleep mode for now')
+        quit()
+    
+    elif (any(comm in command for comm in["how is the weather",'whats the weather','weather outside','what is weather',"how's weather",'how is weather'])):
+        weather()
+    
+    elif 'wikipedia' in command:
+        wikipedia()
+
+
+    
+    elif (any(comm in command for comm in["open notepad",'notepad'])):
+        notepad()
+    
+
+
+    elif (any(comm in command for comm in["shutdown",'restart pc','restart system','go to sleep'])):
+        system_fn(command)
+
+    elif (any(comm in command for comm in["open desktop",'go to desktop'])):
+        keyboard.press_and_release('win+d')
+    
+    elif (any(comm in command for comm in["open groove",'play some music','open music player','play music','play songs'])):
+        groove(command)
+    
+    elif (any(comm in command for comm in["next window",'switch window'])):
+        keyboard.press_and_release('alt+tab')
+
+    elif (any(comm in command for comm in["what is battery percentage",'battery percentage','tell battery percentage','tell battery level'])):
+        battery(command)
+    
+    elif (any(comm in command for comm in["increase brightness",'decrease brightness','set brightness'])):
+        brightness(command)
+
+    
+
 
     elif (any(comm in command for comm in["what is your name","what's your name"])):
         speak('my name is Jarvis.  Maninder Singh created me')
