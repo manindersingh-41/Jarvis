@@ -126,6 +126,26 @@ def commands_list():
     
 def tasks(command):
 
+
+
+    def open_apps(command):
+        # app_web = {'app':['store','paint','clock'],'website':}
+        apps = {('file explorer','files','explorer','my files'):'start explorer','powershell':'start powershell','cmd':'start cmd','whatsapp':'start whatsapp://','chrome':'start chrome','brave':'start brave','calculator':'start calc','camera':'start microsoft.windows.camera:','store':'start ms-windows-store','paint':'start ms-paint:','clock':'start ms-clock:'}
+        
+        
+        for key in apps.keys():
+            if type(key) == str:
+                if key in command:
+                    print('in else ',key)   
+                    os.system(apps[key])
+                    break
+            else:
+                for k in key:
+                    if k in command:
+                        print('for tuple : ',k)
+                        os.system(apps[key])    # key is whole tuple whose value is what we want
+                        break
+
     def weather():
         global temp
         global humidity
@@ -155,6 +175,7 @@ def tasks(command):
 
   
     def youtube(command):
+        global paused
         if 'play' in command:
             command=command.replace("play","")
         if 'song' in command:
@@ -166,6 +187,8 @@ def tasks(command):
             break
         else:
             command=command.replace("on youtube","")
+            paused = False
+            play_pause_music(paused)
             kit.playonyt(command)
 
 
@@ -197,16 +220,6 @@ def tasks(command):
                 command = 'brave'
             
             
-            # all_win=pgw.getAllTitles()
-            # command_command=command.split()
-            # for q in command_command:
-            #     for w in all_win:
-            #         win=w.split()
-            #         for fin in win:
-            #             if q==fin.lower():
-            #                 command=fin
-                
-
 
             print(command)
             switcher=str(pgw.getWindowsWithTitle(command)).split('(')         # here ['[Win32Window', 'hWnd=66596), Win32Window', 'hWnd=1247060)]']
@@ -223,12 +236,11 @@ def tasks(command):
                 '''pipe down msg here'''
                 listen_q.put('switching')
                 command = custom_comm_q.get()
-                # command=take_command('listen switch')
-                # command=command
+                
                 continue
             elif len(switcher)>2:
                 switcher = switcher[1].split(',')
-                # print('eliffff      ',switcher )
+                
                 switcher = switcher[0].replace('=','')
                 hwdn_id = 'a'
                 found = 1
@@ -238,10 +250,7 @@ def tasks(command):
                 switcher=switcher[1].replace('='," ")
                 hwdn_id='a'
                 found =1
-                # speak("speak window name again")
-                # command=take_command('listen switch').lower()
-                # command=command
-                # continue
+                
 
             for i in switcher:
                 if i.isdigit():
@@ -249,16 +258,9 @@ def tasks(command):
                     
             hwdn_id = hwdn_id.replace('a',"")
             hwdn_id = int(hwdn_id)
-            # print("'",hwdn_id,"'")
-            # print('win32gui.SetForegroundWindow(',hwdn_id,')')
+            
             win32gui.SetForegroundWindow(hwdn_id) #66596
 
-    def tell_time(command):
-        strtime=datetime.datetime.now().strftime("%H:%M")
-        print(strtime)
-        speak(strtime)
-
-   
 
     def wikipedia( command):
         speak("Searching wikipedia")
@@ -377,36 +379,85 @@ def tasks(command):
                 command=command.replace('open ','')
             webbrowser.open('https://'+command)
         
-
+    def tell_time(command):
+        strtime=datetime.datetime.now().strftime("%H:%M")
+        print(strtime)
+        speak(strtime)
     
     def play_pause_music(command):
-        keyboard.press_and_release('play/pause media')
+        global paused
+        if paused == True and (any(comm in command for comm in ['resume','resume playing','unpause'])):
+            paused = False
+            keyboard.press_and_release('play/pause media')
 
-    def system_fn( query):
-        if 'shutdown' in query:
+        if paused == False and (any(comm in command for comm in ['pause','stop playing','stop music','stop sound','pause sound'])):
+            paused = True
+            keyboard.press_and_release('play/pause media')
+
+    def volume(command):
+        if mute == False and 'mute' in command:
+            keyboard.press_and_release('volume mute')
+            mute = True
+         
+        elif mute == True and 'unmute' in command:
+            keyboard.press_and_release('volume mute')
+            mute = False
+
+
+    def system_fn( command):
+        if 'shutdown' in command:
             speak("starting to shutdown in 5 seconds")
             time.sleep(5)
             os.system("shutdown /s /t 5")
         
-        elif 'restart pc' in query or "restart system" in query:
+        elif 'restart pc' in command or "restart system" in command:
             speak("restarting")
             time.sleep(2)
             os.system('shutdown /r /t 5')
 
-        elif 'go to sleep' in query or 'sleep mode' in query:
+        elif 'go to sleep' in command or 'sleep mode' in command:
             os.system("rund1132.exe powrprof,dll,SetSuspendState 0,1,0")
 
-
+    
+    def search_folder(parent,find_folder):
+        found_f = False
+        if len(parent) ==1:
+            root_drive = parent+':\\'
+            if os.path.exists(root_drive):
+                parent = parent+':\\'
+            else:
+                print('drive doesnt exist on system')
+                return None
+        for root,directory,folder in os.walk(parent):
+            if found_f:
+                break
+            
+            for folders in directory:
+                # print(folders)
+                
+                if find_folder in folders.lower():
+            
+                
+                    folder_path = os.path.join(root,folders)
+                    return folder_path
+                
+  
     def quit():
-        pass
-
+        global stop_listener
+        global main_th
+        stop_listener =1
+        main_th = 1
 
 
     # while True:
-
-    # check for command
     if (any(comm in command for comm in["what's time",'the time'])):
         tell_time(command)
+
+    elif (any(comm in command for comm in['resume','unpause','pause','stop playing','resume playing','stop music','stop sound','pause sound'])):
+        play_pause_music(command)
+
+    elif (any(comm in command for comm in ['mute','unmute','increase volume','set volume','decrease volume'])):
+        volume(command)
 
     elif (any(comm in command for comm in["search",'on google']) and not (any(comm in command for comm in['wikipedia']))):
         command = command.replace('search','')
@@ -419,7 +470,11 @@ def tasks(command):
     elif (any(comm in command for comm in ['copy it','copy the text','make a note of selected','copy and make note','copy this','make note of it','store this','store it','store the selected','copy the selected','give me all text copied','all text copied','make file of text copied','make file of text copy','create file of copy text'])):
         copy_and_note(command)
 
-
+    elif (any(comm in command for comm in["what is your name","what's your name"])):
+        speak('my name is Jarvis.  Maninder Singh created me')
+    
+    elif (any(comm in command for comm in["switch to",'change to'])):
+        switch_window(command)
     
     elif 'quit' in command or 'sleep now' in command:
         speak('going to sleep mode for now')
@@ -431,12 +486,14 @@ def tasks(command):
     elif 'wikipedia' in command:
         wikipedia()
 
-
+    elif 'play' in command and "on youtube" in command or 'play' in command and "in youtube" in command or 'open youtube' in command or 'on youtube' in command:
+        youtube(command)
     
     elif (any(comm in command for comm in["open notepad",'notepad'])):
         notepad()
     
-
+    elif "how to" in command:
+        how_to(command)
 
     elif (any(comm in command for comm in["shutdown",'restart pc','restart system','go to sleep'])):
         system_fn(command)
@@ -456,20 +513,8 @@ def tasks(command):
     elif (any(comm in command for comm in["increase brightness",'decrease brightness','set brightness'])):
         brightness(command)
 
-    
-
-
-    elif (any(comm in command for comm in["what is your name","what's your name"])):
-        speak('my name is Jarvis.  Maninder Singh created me')
-    
-    elif (any(comm in command for comm in["switch to",'change to'])):
-        switch_window(command) 
-
-    elif 'play' in command and "on youtube" in command or 'play' in command and "in youtube" in command or 'open youtube' in command or 'on youtube' in command:
-        youtube(command)   
-
-    elif "how to" in command:
-        how_to(command)
+    elif 'open' in command :
+        open_apps(command)
 
 
 
