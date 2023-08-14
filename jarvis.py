@@ -131,7 +131,9 @@ def tasks(command):
     def open_apps(command):
         # app_web = {'app':['store','paint','clock'],'website':}
         apps = {('file explorer','files','explorer','my files'):'start explorer','powershell':'start powershell','cmd':'start cmd','whatsapp':'start whatsapp://','chrome':'start chrome','brave':'start brave','calculator':'start calc','camera':'start microsoft.windows.camera:','store':'start ms-windows-store','paint':'start ms-paint:','clock':'start ms-clock:'}
-        
+        if (any(comm in command for comm in ['c drive','e drive','d drive','f drive','open folder'])) or ('open' and 'folder') in command or ('search' and 'folder') in command:
+            file_explorer(command)
+            exit()
         
         for key in apps.keys():
             if type(key) == str:
@@ -440,7 +442,40 @@ def tasks(command):
                 
                     folder_path = os.path.join(root,folders)
                     return folder_path
-                
+  
+  
+            
+    def file_explorer(command):
+        if 'open' in command:
+            command=command.replace("open","")
+        if 'drive' in command:
+            command=command.replace("drive","")
+        
+        if not 'folder' in command:
+            if " " in command:
+                command=command.replace(" ","")
+
+            if "second" in command:
+                f_e_path="e:"
+            if 'first' in command:
+                f_e_path="c:"
+            if 'third' in command:
+                f_e_path="f:"
+
+        elif 'folder' in command:
+            print('here')
+            if ' in ' in command:
+                command = command.replace('folder','')
+                command_split = command.split(' in ')
+                # print(command_split)
+                drive = command_split[1].strip()
+                folder = command_split[0].strip()
+                print(drive,folder)
+                f_e_path = search_folder(drive,folder)
+        
+        os.startfile(f_e_path)
+        
+              
   
     def quit():
         global stop_listener
