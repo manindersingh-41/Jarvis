@@ -21,8 +21,7 @@ import mysql.connector as sql
 import pyperclip
 import random
 engine=pyttsx3.init()
-# voices=engine.getProperty('voices')
-# engine.setProperty('voice',voices[0].id)
+
 
 command_list = []
 stop_listener = 0
@@ -37,9 +36,7 @@ def speak(audio):
         engine.endLoop()
     engine.say(audio)
     engine.runAndWait()
-    # engine.endLoop()
-    # engine = None
-    # engine.starLoop(False)
+    
 
 
 def listener(any_msg):
@@ -48,8 +45,7 @@ def listener(any_msg):
     listen = 0
     spcl_msg = None
     while success!=1 and stop_listener==0:
-        # playsound('E:\\#####Python__Programs#####\\JARVIS\\listen3r.m4a')
-        # mixer.music.play()
+       
         recog=sr.Recognizer()
 
         with sr.Microphone() as source:
@@ -75,7 +71,7 @@ def listener(any_msg):
         except Exception:
             print("Say that again please..")
             print('gonna restart')
-            # speak('speak again')
+            
             continue
 
 
@@ -96,14 +92,14 @@ def recogniser(audio,spcl_msg,recog,number):
             print("Recognized special..."+spcl_msg)
             custom_comm_q.put(command.lower())
             spcl_msg = None
-        # print("You said: {}".format(command).lower())
+        
         
         if 'end' in command:
             print(command_list)
             stop_listener = 1
     except Exception as e:
         print(e)
-        # speak('say again unable to understand'+str(number))
+        
 
 def commands_list():
     print('Initialised command list ')
@@ -129,7 +125,7 @@ def tasks(command):
 
 
     def open_apps(command):
-        # app_web = {'app':['store','paint','clock'],'website':}
+        
         apps = {('file explorer','files','explorer','my files'):'start explorer','powershell':'start powershell','cmd':'start cmd','whatsapp':'start whatsapp://','chrome':'start chrome','brave':'start brave','calculator':'start calc','camera':'start microsoft.windows.camera:','store':'start ms-windows-store','paint':'start ms-paint:','clock':'start ms-clock:'}
         if (any(comm in command for comm in ['c drive','e drive','d drive','f drive','open folder'])) or ('open' and 'folder') in command or ('search' and 'folder') in command:
             file_explorer(command)
@@ -484,7 +480,7 @@ def tasks(command):
         main_th = 1
 
 
-    # while True:
+    
     if (any(comm in command for comm in["what's time",'the time'])):
         tell_time(command)
 
