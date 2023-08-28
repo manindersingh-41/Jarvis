@@ -20,13 +20,24 @@ from pywikihow import search_wikihow
 import mysql.connector as sql
 import pyperclip
 import random
+from pycaw.pycaw import AudioUtilities
+import multiprocessing as mp
+print('imported')
+
+# bard = Bard(token=api_key)
 engine=pyttsx3.init()
+# voices=engine.getProperty('voices')
+# engine.setProperty('voice',voices[0].id)
 
-
-command_list = []
+threads_queue = queue.Queue()
+f_x_path = ''
+command_list = mp.Queue()
 stop_listener = 0
+main_th = 0
 listen_q = queue.Queue(maxsize=1)
 custom_comm_q = queue.Queue(maxsize=1)
+paused = False
+mute = False
 copied_text = []
 
 
@@ -36,16 +47,19 @@ def speak(audio):
         engine.endLoop()
     engine.say(audio)
     engine.runAndWait()
-    
+    # engine.endLoop()
+    # engine = None
+    # engine.starLoop(False)
 
 
-def listener(any_msg):
+def listener(any_msg,command_list):
     global spcl_msg
     success = 0
     listen = 0
     spcl_msg = None
     while success!=1 and stop_listener==0:
-       
+        # playsound('E:\\#####Python__Programs#####\\JARVIS\\listen3r.m4a')
+        # mixer.music.play()
         recog=sr.Recognizer()
 
         with sr.Microphone() as source:
@@ -56,14 +70,15 @@ def listener(any_msg):
             recog.energy_threshold = 750
             recog.adjust_for_ambient_noise(source)
             recog.dynamic_energy_threshold = True
-            audio=recog.listen(source)
+            audio=recog.listen(source,timeout=6)
         try:
             if listen_q.empty():
                 pass
             else:
                 spcl_msg = listen_q.get()
             global recog_thread
-            recog_thread = threading.Thread(target=recogniser, args = (audio,spcl_msg,recog,listen))
+            
+            recog_thread = threading.Thread(target=recogniser, args = (audio,spcl_msg,recog,listen,command_list))
             recog_thread.start()
 
             continue
@@ -71,11 +86,11 @@ def listener(any_msg):
         except Exception:
             print("Say that again please..")
             print('gonna restart')
-            
+            # speak('speak again')
             continue
 
 
-def recogniser(audio,spcl_msg,recog,number):
+def recogniser(audio,spcl_msg,recog,number,command_list):
     global stop_listener
     
     try:
@@ -87,29 +102,35 @@ def recogniser(audio,spcl_msg,recog,number):
             print("Recognized...")
             command=command.lower()
             print('>> you said : {}'.format(command))
-            command_list.append(command)
+            # command_list.append(command)
+            command_list.put(command)
         else:
             print("Recognized special..."+spcl_msg)
             custom_comm_q.put(command.lower())
             spcl_msg = None
+        # print("You said: {}".format(command).lower())
         
-        
-        if 'end' in command:
+        if 'go to sleep' in command:
+            print(command)
             print(command_list)
             stop_listener = 1
     except Exception as e:
+        print("recog"+str(number)+" failed")
         print(e)
-        
+        # speak('say again unable to understand'+str(number))
 
 def commands_list():
     print('Initialised command list ')
     speak('Initialised code')
-    while True:
+    while main_th == 0:
         if command_list== []:
             pass
 
         else:
-            command = command_list.pop(0)
+            print(command_list)
+            command = command_list.get()
+            print('after : ',command_list)
+            print('\t\t\tin command list : ',command)
             if command == None:
                 pass
             elif 'end program' in command or 'stop program' in command:
@@ -117,15 +138,15 @@ def commands_list():
                 pass
 
             else:
-                threading.Thread(target=tasks, args=(command,)).start()
-    
+                # threading.Thread(target=tasks, args=(command,)).start()
+                tasks(command)
     
 def tasks(command):
 
 
 
     def open_apps(command):
-        
+        # app_web = {'app':['store','paint','clock'],'website':}
         apps = {('file explorer','files','explorer','my files'):'start explorer','powershell':'start powershell','cmd':'start cmd','whatsapp':'start whatsapp://','chrome':'start chrome','brave':'start brave','calculator':'start calc','camera':'start microsoft.windows.camera:','store':'start ms-windows-store','paint':'start ms-paint:','clock':'start ms-clock:'}
         if (any(comm in command for comm in ['c drive','e drive','d drive','f drive','open folder'])) or ('open' and 'folder') in command or ('search' and 'folder') in command:
             file_explorer(command)
@@ -173,6 +194,7 @@ def tasks(command):
 
   
     def youtube(command):
+        print('\t\tin youtube')
         global paused
         if 'play' in command:
             command=command.replace("play","")
@@ -186,8 +208,10 @@ def tasks(command):
         else:
             command=command.replace("on youtube","")
             paused = False
-            play_pause_music(paused)
+            # play_pause_music(paused)
+            # speak('playing')
             kit.playonyt(command)
+            print('played')
 
 
     def how_to(command):
@@ -388,11 +412,13 @@ def tasks(command):
             paused = False
             keyboard.press_and_release('play/pause media')
 
-        if paused == False and (any(comm in command for comm in ['pause','stop playing','stop music','stop sound','pause sound'])):
+        if (any(comm in command for comm in ['top','top music','pause','stop playing','stop music','stop sound','pause sound'])) and paused==False:
             paused = True
             keyboard.press_and_release('play/pause media')
 
     def volume(command):
+        global mute
+
         if mute == False and 'mute' in command:
             keyboard.press_and_release('volume mute')
             mute = True
@@ -400,6 +426,8 @@ def tasks(command):
         elif mute == True and 'unmute' in command:
             keyboard.press_and_release('volume mute')
             mute = False
+        
+        
 
 
     def system_fn( command):
@@ -438,8 +466,7 @@ def tasks(command):
                 
                     folder_path = os.path.join(root,folders)
                     return folder_path
-  
-  
+                
             
     def file_explorer(command):
         if 'open' in command:
@@ -471,8 +498,7 @@ def tasks(command):
         
         os.startfile(f_e_path)
         
-              
-  
+    
     def quit():
         global stop_listener
         global main_th
@@ -480,11 +506,11 @@ def tasks(command):
         main_th = 1
 
 
-    
+    # while True:
     if (any(comm in command for comm in["what's time",'the time'])):
         tell_time(command)
 
-    elif (any(comm in command for comm in['resume','unpause','pause','stop playing','resume playing','stop music','stop sound','pause sound'])):
+    elif (any(comm in command for comm in['resume','unpause','pause','stop playing','resume playing','stop music','stop sound','pause sound','top music'])):
         play_pause_music(command)
 
     elif (any(comm in command for comm in ['mute','unmute','increase volume','set volume','decrease volume'])):
@@ -547,11 +573,31 @@ def tasks(command):
     elif 'open' in command :
         open_apps(command)
 
+    
+    
+    
+
+
+
+
+# def call(command):
+#     if 'call' in command:
+#         command = command.replace('call','')
+    
+#     print('--------------->>>>>> need name')
+#     listen_q.put('name')
+#     n = custom_comm_q.get()
+#     print('------->>>>>>>   ',n)
+
+
+# if 'call' in command:
+#     call(command)
 
 
 if __name__ == "__main__":
-    listener_thread = threading.Thread(target=listener,args=('listening...',))
-    listener_thread.start()
+    listening_process = mp.Process(target=listener,args=('listening...',command_list))
+    listening_process.start()
     commands_list()
-
-
+    # tasks('switch to brave')
+    # win32gui.SetForegroundWindow(66596) #
+    
