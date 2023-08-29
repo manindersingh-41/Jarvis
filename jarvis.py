@@ -22,12 +22,22 @@ import pyperclip
 import random
 from pycaw.pycaw import AudioUtilities
 import multiprocessing as mp
+from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+from ctypes import cast, POINTER
+from comtypes import CLSCTX_ALL
+import re
 print('imported')
 
 # bard = Bard(token=api_key)
 engine=pyttsx3.init()
 # voices=engine.getProperty('voices')
 # engine.setProperty('voice',voices[0].id)
+
+devices = AudioUtilities.GetSpeakers()
+interface = devices.Activate(
+    IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+volume = cast(interface, POINTER(IAudioEndpointVolume))
+
 
 threads_queue = queue.Queue()
 f_x_path = ''
@@ -416,6 +426,20 @@ def tasks(command):
             paused = True
             keyboard.press_and_release('play/pause media')
 
+
+    def extract_integer_from_string(input_string):
+        # Use regular expression to find all sequences of digits in the string
+        integer_matches = re.findall(r'\d+', input_string)
+        
+        if integer_matches:
+            # Convert the first match to an integer and return
+            return int(integer_matches[0])
+        else:
+            return None  # Return None if no integer found
+
+
+
+
     def volume(command):
         global mute
 
@@ -426,6 +450,30 @@ def tasks(command):
         elif mute == True and 'unmute' in command:
             keyboard.press_and_release('volume mute')
             mute = False
+
+        elif (any(comm in command for comm in ['increase','increase volume'])):
+            current_vol = round(volume.GetMasterVolumeLevelScalar()*100)
+            set_volume = current_vol+10
+            if set_volume>100:
+                set_volume ==100
+
+            volume.SetMasterVolumeLevelScalar(set_volume/100,None)
+
+        elif (any(comm in command for comm in ['decrease','decrease volume'])):
+            current_vol = round(volume.GetMasterVolumeLevelScalar()*100)
+            set_volume = current_vol-10
+            if set_volume<0:
+                set_volume ==0
+
+            volume.SetMasterVolumeLevelScalar(set_volume/100,None)
+
+        elif (any(comm in command for comm in['set','set volume'])):
+            set_volume = extract_integer_from_string(command)
+            if set_volume>100:
+                set_volume ==100
+            if set_volume<0:
+                set_volume = 0
+            volume.SetMasterVolumeLevelScalar(set_volume/100,None)
         
         
 
