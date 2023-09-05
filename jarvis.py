@@ -75,7 +75,7 @@ def listener(any_msg,command_list):
         with sr.Microphone() as source:
             listen +=1
             print(any_msg+str(listen))
-                
+            recog.adjust_for_ambient_noise(source,duration=0.3)
             recog.pause_threshold=0.5
             recog.energy_threshold = 750
             recog.adjust_for_ambient_noise(source)
